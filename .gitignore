@@ -1,0 +1,6 @@
+*~
+\#*
+MANIFEST
+*egg-info
+.venv
+__pycache__
