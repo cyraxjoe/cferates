@@ -1,18 +1,43 @@
-from decimal import Decimal
-
 from cferates import Rate
-from cferates.scraper.base import AbstractStatefulScraper
+from cferates.scraper.base import (
+    AbstractStatefulScraper,
+    AbstractStatefulField,
+    AbstractForm,
+    SelectField,
+    HiddenField
+)
+
+
+class BaseDomesticRateForm(AbstractForm):
+    hdAnio = HiddenField("ctl00$ContentPlaceHolder1$hdAnio")
+    fecha_ddAnio = SelectField("ctl00$ContentPlaceHolder1$Fecha$ddAnio")
+
+
+class DomesticRateOneForm(BaseDomesticRateForm):
+    mes_consulta = SelectField(
+        "ctl00$ContentPlaceHolder1$MesVerano1$ddMesConsulta",
+        "0"
+    )
+
+class DomesticRateWithSummerForm(BaseDomesticRateForm):
+    # month fields from 1 ... 12, 0 is not set
+    mes_verano  = SelectField(
+        "ctl00$ContentPlaceHolder1$MesVerano1$ddMesVerano",
+        "0"
+    )
+    mes_consulta = SelectField(
+        "ctl00$ContentPlaceHolder1$MesVerano2$ddMesConsulta",
+        "0"
+    )
+
+class DACRateForm(BaseDomesticRateForm):
+    hdMes = HiddenField("ctl00$ContentPlaceHolder1$hdMes", "0")
+    mes_consulta = HiddenField("ctl00$ContentPlaceHolder1$Fecha1$ddMes", "0")
 
 
 class BaseDomesticScraper(AbstractStatefulScraper):
     rate: Rate = None
-
-    def __init__(self, do_initial_request=True, prev_session=None):
-        super().__init__(do_initial_request, prev_session)
-        self.form_fields = {
-            "hidden-anio": "ctl00$ContentPlaceHolder1$hdAnio",
-            "anio": "ctl00$ContentPlaceHolder1$Fecha$ddAnio",
-        }
+    FormCls = BaseDomesticRateForm
 
     def _scrape_values(self, soup, two_intermediates):
         main_table = soup.select("table.table")
@@ -38,7 +63,7 @@ class BaseDomesticScraper(AbstractStatefulScraper):
         else:
             keys = ("Basico", "Intermedio", "Excedente")
         if all(values):
-            return dict(zip(keys, map(Decimal, values)))
+            return dict(zip(keys, values))
         else:
             raise Exception(
                 "Unable to obtain all the values: \n {}".format(values))
@@ -46,16 +71,7 @@ class BaseDomesticScraper(AbstractStatefulScraper):
 
 
 class BaseDomesticScraperWithSummer(BaseDomesticScraper):
-    def __init__(self, do_initial_request=True, prev_session=None):
-        super().__init__(do_initial_request, prev_session)
-        assert self.rate != Rate.ONE
-        extra_fields = {
-           # month field from 1 ... 12, 0 is not set
-            "mes-verano": "ctl00$ContentPlaceHolder1$MesVerano1$ddMesVerano",
-            # month field from 1 ... 12, 0 is not set
-            "mes-consulta": "ctl00$ContentPlaceHolder1$MesVerano2$ddMesConsulta"
-        }
-        self.form_fields.update(extra_fields)
+    FormCls = DomesticRateWithSummerForm
 
     def _has_two_intermediates(self, month, summer_month):
         if self.rate in (Rate.ONE_A, Rate.ONE_B):
@@ -75,42 +91,27 @@ class BaseDomesticScraperWithSummer(BaseDomesticScraper):
         if summer_month < 2 or summer_month > 5:
             raise Exception(
                 "Invalid summer month {} is not between Feb - May".format(summer_month))
-        str_year, str_month, str_summer_month = map(str, (year, month, summer_month))
-        fields = {
-            self.form_fields["hidden-anio"]: str_year,
-            self.form_fields["anio"]: str_year,
-            self.form_fields["mes-verano"]: str_summer_month,
-            self.form_fields["mes-consulta"]: str_month
-        }
-        target = self.form_fields["mes-consulta"]
-        params = self._get_request_params(target, **fields)
-        soup = self._make_stateful_request('POST', data=params)
+        self.form.hdAnio = year
+        self.form.fecha_ddAnio = year
+        self.form.mes_verano = summer_month
+        self.form.mes_consulta = month
+        params = self.form(DomesticRateWithSummerForm.mes_consulta)
+        soup = self.http_post_request(params)
         two_intermediates = self._has_two_intermediates(month, summer_month)
         return self._scrape_values(soup, two_intermediates)
 
 
 class DomesticScraper_Rate_1(BaseDomesticScraper):
     rate = Rate.ONE
+    FormCls = DomesticRateOneForm
     main_url = "https://app.cfe.mx/Aplicaciones/CCFE/Tarifas/TarifasCRECasa/Tarifas/Tarifa1.aspx"
 
-    def __init__(self, do_initial_request=True, prev_session=None):
-        super().__init__(do_initial_request, prev_session)
-        extra_fields = {
-            # month field from 1 ... 12, 0 is not set
-            "mes-consulta": "ctl00$ContentPlaceHolder1$MesVerano1$ddMesConsulta"
-        }
-        self.form_fields.update(extra_fields)
-
     def request(self, year: int, month: int):
-        str_year, str_month = map(str, (year, month))
-        fields = {
-            self.form_fields["hidden-anio"]: str_year,
-            self.form_fields["anio"]: str_year,
-            self.form_fields["mes-consulta"]: str_month
-        }
-        target = self.form_fields["mes-consulta"]
-        params = self._get_request_params(target, **fields)
-        soup = self._make_stateful_request('POST', data=params)
+        self.form.hdAnio = year
+        self.form.fecha_ddAnio = year
+        self.form.mes_consulta = month
+        params = self.form(target=DomesticRateOneForm.mes_consulta)
+        soup = self.http_post_request(params)
         return self._scrape_values(soup, two_intermediates=False)
 
 
@@ -141,37 +142,18 @@ class DomesticScraper_Rate_1F(BaseDomesticScraperWithSummer):
 
 class DomesticScraper_Rate_DAC(AbstractStatefulScraper):
     main_url = "https://app.cfe.mx/Aplicaciones/CCFE/Tarifas/TarifasCRECasa/Tarifas/TarifaDAC.aspx"
-
-    def __init__(self, do_initial_request=True, prev_session=None):
-        super().__init__(do_initial_request, prev_session)
-        self.form_fields = {
-            "hidden-anio": "ctl00$ContentPlaceHolder1$hdAnio",
-            # most likely, the previous  year
-            "hidden-mes": "ctl00$ContentPlaceHolder1$hdMes",
-            "anio": "ctl00$ContentPlaceHolder1$Fecha$ddAnio",
-            # this is relevant in case we want tu support prev 2019 dates
-            #"mes-consulta": "ctl00$ContentPlaceHolder1$MesVerano3$ddMesConsulta",
-            ##
-            # month field from 1 ... 12, 0 is not set,
-            # used for 2019 (and maybe up?)
-            "mes-consulta-new": "ctl00$ContentPlaceHolder1$Fecha1$ddMes"
-        }
+    FormCls = DACRateForm
 
     def request(self, year: int, month: int):
         if year < 2019:
             raise Exception("Currently this class only support the scaping of 2019 and up for DAC")
-        str_year = str(year)
-        str_month = str(month)
-        fields = {
-            self.form_fields["hidden-anio"]: str_year,
-            self.form_fields["anio"]: str_year,
-            # explicit 0, to specify a clean request (no previous month)
-            self.form_fields["hidden-mes"]: "0",
-            self.form_fields["mes-consulta-new"]: str_month
-        }
-        target = self.form_fields["mes-consulta-new"]
-        params = self._get_request_params(target, **fields)
-        return self._make_stateful_request('POST', data=params)
+        self.form.hdAnio = year
+        self.form.fecha_ddAnio = year
+        # explicit 0, to specify a clean request (no previous month)
+        self.form.hdMes = 0
+        self.form.mes_consulta = month
+        params = self.form(DACRateForm.mes_consulta)
+        return self.http_post_request(params)
 
 
     def _scrape_values(self, soup):
@@ -201,7 +183,7 @@ class DomesticScraper_Rate_DAC(AbstractStatefulScraper):
         else:
             keys = ("Basico", "Intermedio", "Excedente")
         if all(values):
-            return dict(zip(keys, map(Decimal, values)))
+            return dict(zip(keys, values))
         else:
             raise Exception(
                 "Unable to obtain all the values: \n {}".format(values))
