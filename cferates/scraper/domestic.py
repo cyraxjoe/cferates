@@ -12,6 +12,19 @@ class BaseDomesticRateForm(AbstractForm):
     hdAnio = HiddenField("ctl00$ContentPlaceHolder1$hdAnio")
     fecha_ddAnio = SelectField("ctl00$ContentPlaceHolder1$Fecha$ddAnio")
 
+    @property
+    def anio(self):
+        raise NotImplementedError("This property is not meant to be used.")
+
+    @anio.setter
+    def anio(self, anio):
+        """
+        Helper property setter to configure the apparently, always equal
+        hidden and select year fields.
+        """
+        self.hdAnio = anio
+        self.fecha_ddAnio = anio
+
 
 class DomesticRateOneForm(BaseDomesticRateForm):
     mes_consulta = SelectField(
@@ -91,8 +104,7 @@ class BaseDomesticScraperWithSummer(BaseDomesticScraper):
         if summer_month < 2 or summer_month > 5:
             raise Exception(
                 "Invalid summer month {} is not between Feb - May".format(summer_month))
-        self.form.hdAnio = year
-        self.form.fecha_ddAnio = year
+        self.form.anio = year
         self.form.mes_verano = summer_month
         self.form.mes_consulta = month
         params = self.form(DomesticRateWithSummerForm.mes_consulta)
@@ -107,8 +119,7 @@ class DomesticScraper_Rate_1(BaseDomesticScraper):
     main_url = "https://app.cfe.mx/Aplicaciones/CCFE/Tarifas/TarifasCRECasa/Tarifas/Tarifa1.aspx"
 
     def request(self, year: int, month: int):
-        self.form.hdAnio = year
-        self.form.fecha_ddAnio = year
+        self.form.anio = year
         self.form.mes_consulta = month
         params = self.form(target=DomesticRateOneForm.mes_consulta)
         soup = self.http_post_request(params)
@@ -144,44 +155,32 @@ class DomesticScraper_Rate_DAC(AbstractStatefulScraper):
     main_url = "https://app.cfe.mx/Aplicaciones/CCFE/Tarifas/TarifasCRECasa/Tarifas/TarifaDAC.aspx"
     FormCls = DACRateForm
 
+    @staticmethod
+    def scrape_from_row(row):
+        name, *values = [r.text.replace("$", "").strip() for r in row]
+        return {name: values}
+
     def request(self, year: int, month: int):
         if year < 2019:
             raise Exception("Currently this class only support the scaping of 2019 and up for DAC")
-        self.form.hdAnio = year
-        self.form.fecha_ddAnio = year
+        self.form.anio = year
         self.form.mes_consulta = month
         params = self.form(DACRateForm.mes_consulta)
-        return self.http_post_request(params)
-
+        soup = self.http_post_request(params)
+        return self._scrape_values(soup)
 
     def _scrape_values(self, soup):
-        dac_fv_table = soup.select("#TarifaDacFV")
-        dac_v_table = soup.select("#TarifaDacV")
-        if not dac_fv_table:
+        dac_fv_rows = soup.select("#TarifaDacFV td")
+        dac_v_rows = soup.select("#TarifaDacV td")
+        if not dac_fv_rows:
             raise Exception("The selector for the DAC FV table is not working.")
-        if not dac_v_table:
+        if not dac_v_rows:
             raise Exception("The selector for the DAC V table is not working.")
-        dac_fv_table = dac_fv_table.pop()
-        dac_v_table = dac_v_table.pop()
-
-        rows = main_table.find_all('td')
-        # start with the always present, basic
-        values = [
-            # basic
-            rows[1].text.strip(),
-            # intermediate (low?)
-            rows[4].text.strip(),
-            # intermediate high or excess
-            rows[7].text.strip()
-        ]
-        if two_intermediates:
-            keys = ("Basico", "IntermedioBajo", "IntermedioAlto", "Excedente")
-            # in this case, this is excess
-            values.append(rows[10].text.strip())
-        else:
-            keys = ("Basico", "Intermedio", "Excedente")
-        if all(values):
-            return dict(zip(keys, values))
-        else:
-            raise Exception(
-                "Unable to obtain all the values: \n {}".format(values))
+        values = {}
+        values.update(self.scrape_from_row(dac_fv_rows[:4]))
+        values.update(self.scrape_from_row(dac_fv_rows[4:]))
+        start, step = 0, 3
+        for end in range(step, len(dac_v_rows) + step, step):
+            values.update(self.scrape_from_row(dac_v_rows[start:end]))
+            start = end
+        return values
