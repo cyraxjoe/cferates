@@ -32,7 +32,7 @@ class DomesticRateWithSummerForm(BaseDomesticRateForm):
 
 class DACRateForm(BaseDomesticRateForm):
     hdMes = HiddenField("ctl00$ContentPlaceHolder1$hdMes", "0")
-    mes_consulta = HiddenField("ctl00$ContentPlaceHolder1$Fecha1$ddMes", "0")
+    mes_consulta = SelectField("ctl00$ContentPlaceHolder1$Fecha1$ddMes", "0")
 
 
 class BaseDomesticScraper(AbstractStatefulScraper):
@@ -149,8 +149,6 @@ class DomesticScraper_Rate_DAC(AbstractStatefulScraper):
             raise Exception("Currently this class only support the scaping of 2019 and up for DAC")
         self.form.hdAnio = year
         self.form.fecha_ddAnio = year
-        # explicit 0, to specify a clean request (no previous month)
-        self.form.hdMes = 0
         self.form.mes_consulta = month
         params = self.form(DACRateForm.mes_consulta)
         return self.http_post_request(params)

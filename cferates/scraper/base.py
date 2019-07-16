@@ -1,23 +1,18 @@
 import http
-import enum
 import inspect
+from dataclasses import dataclass
 from pprint import pformat
 
 import requests
 from bs4 import BeautifulSoup
 
 
-class FieldType(enum.Enum):
-    select = enum.auto()
-    hidden = enum.auto()
-
-
 class AbstractStatefulField:
 
-    def __init__(self, field_type: FieldType, field_name: str, initial_value=""):
-        self.ftype = field_type
+    def __init__(self, field_name: str, initial_value: str = "", update: bool = True):
         self.name = field_name
         self.initial_value = ""
+        self.update = update
 
     def __set_name__(self, owner_cls, name):
         try:
@@ -41,7 +36,8 @@ class AbstractStatefulField:
         of the instance.
         """
         if isinstance(value, BeautifulSoup):
-            self._update_from_soup(owner_inst, value)
+            if self.update: # if update is False, just ignore the value.
+                self._update_from_soup(owner_inst, value)
         else:
             owner_inst._internal_state[self.name] = value
 
@@ -52,21 +48,34 @@ class AbstractStatefulField:
             return owner_inst._internal_state[self.name]
 
     def _update_from_soup(self, owner_inst, soup):
-        value = soup.select("#" + self.name).pop()["value"].strip()
+        results = soup.select(self.css_selector)
+        if not results:
+            raise Exception(
+                f"The css selector '{ self.css_selector }' didn't return anything for { self.name }"
+            )
+        value = results.pop()["value"].strip()
         if value:
             owner_inst._internal_state[self.name] = value
         else:
-            raise Exception(
-                "Unable to obtain the value of {}".format(self.name))
+            raise Exception(f"Unable to obtain the value of { self.name }")
+
+    @property
+    def css_selector(self):
+        raise NotImplementedError(
+            "The class is not fully defined, there is no css selector.")
+
 
 class HiddenField(AbstractStatefulField):
-    def __init__(self, field_name, initial_value=""):
-        super().__init__(FieldType.hidden, field_name, initial_value)
 
+    @property
+    def css_selector(self):
+        return f'input[name="{ self.name }"]'
 
 class SelectField(AbstractStatefulField):
-    def __init__(self, field_name, initial_value=""):
-        super().__init__(FieldType.select, field_name, initial_value)
+
+    @property
+    def css_selector(self):
+        return f'select[name="{ self.name }"] > option[selected]'
 
 class AbstractForm:
     ## base state managers in the form, after each interaction
@@ -75,12 +84,13 @@ class AbstractForm:
     view_state_generator = HiddenField("__VIEWSTATEGENERATOR")
     event_validation = HiddenField("__EVENTVALIDATION")
     ###
-    event_target = HiddenField("__EVENTTARGET")
-    event_argument = HiddenField("__EVENTARGUMENT")
-    last_focus = HiddenField("__LASTFOCUS")
+    event_target = HiddenField("__EVENTTARGET", update=False)
+    event_argument = HiddenField("__EVENTARGUMENT", update=False)
+    last_focus = HiddenField("__LASTFOCUS", update=False)
 
     def __init__(self):
         self._configure_internal_state()
+        self._configure_stateful_fields()
 
     def _configure_internal_state(self):
         # get all the parent classes including
@@ -95,6 +105,14 @@ class AbstractForm:
             except KeyError:
                 pass # the ancestor didn't defiend any field
         self._internal_state = internal_state
+
+    def _configure_stateful_fields(self):
+        stateful_fields = []
+        for field_name in dir(type(self)):
+            if not field_name.startswith("_"):
+                if isinstance(getattr(self.__class__, field_name), AbstractStatefulField):
+                    stateful_fields.append(field_name)
+        self.stateful_fields = tuple(stateful_fields)
 
     def __repr__(self):
         return "{}<{}>\n{}".format(
@@ -118,7 +136,15 @@ class AbstractForm:
         self.event_target = target.name
         return dict(self._internal_state)
 
+    def __lt__(self, soup):
+        """
+        Cute little operator definition to use the expression: `form < soup`
+        """
+        self.update_internal_state(soup)
 
+    def update_internal_state(self, soup):
+        for field_name in self.stateful_fields:
+            setattr(self, field_name, soup)
 
 class AbstractStatefulScraper:
     main_url = None
@@ -139,11 +165,6 @@ class AbstractStatefulScraper:
         if do_initial_request:
             self.http_get_request()
 
-    def _update_internal_state(self, soup):
-        self.form.view_state = soup
-        self.form.view_state_generator = soup
-        self.form.event_validation = soup
-
     def _make_stateful_request(self, method='get', **extr_params):
         """
         Make a http request (get/post) to the main URL `self.main_url`,
@@ -152,15 +173,15 @@ class AbstractStatefulScraper:
         """
         norm_method = method.lower()
         if norm_method not in ('get', 'post'):
-            raise Exception("The method {} is not supported".format(method))
+            raise Exception(f"The method { method } is not supported")
         if method == 'get':
             response = self.req_session.get(self.main_url, **extr_params)
         else:
             response = self.req_session.post(self.main_url, **extr_params)
         if response.status_code != http.HTTPStatus.OK:
-            raise Exception("Unable to obtain the initial page. {}".format(response))
+            raise Exception(f"Unable to obtain the initial page. { response }")
         soup = BeautifulSoup(response.text, 'lxml')
-        self._update_internal_state(soup)
+        self.form.update_internal_state(soup)
         return soup
 
     def http_get_request(self, **kwargs):
