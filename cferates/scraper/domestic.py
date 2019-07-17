@@ -1,7 +1,6 @@
 from cferates import Rate
 from cferates.scraper.base import (
     AbstractStatefulScraper,
-    AbstractStatefulField,
     AbstractForm,
     SelectField,
     HiddenField
@@ -27,25 +26,17 @@ class BaseDomesticRateForm(AbstractForm):
 
 
 class DomesticRateOneForm(BaseDomesticRateForm):
-    mes_consulta = SelectField(
-        "ctl00$ContentPlaceHolder1$MesVerano1$ddMesConsulta",
-        "0"
-    )
+    mes_consulta = SelectField("ctl00$ContentPlaceHolder1$MesVerano1$ddMesConsulta")
 
 class DomesticRateWithSummerForm(BaseDomesticRateForm):
     # month fields from 1 ... 12, 0 is not set
-    mes_verano  = SelectField(
-        "ctl00$ContentPlaceHolder1$MesVerano1$ddMesVerano",
-        "0"
-    )
-    mes_consulta = SelectField(
-        "ctl00$ContentPlaceHolder1$MesVerano2$ddMesConsulta",
-        "0"
-    )
+    mes_verano  = SelectField("ctl00$ContentPlaceHolder1$MesVerano1$ddMesVerano")
+    mes_consulta = SelectField("ctl00$ContentPlaceHolder1$MesVerano2$ddMesConsulta")
+
 
 class DACRateForm(BaseDomesticRateForm):
-    hdMes = HiddenField("ctl00$ContentPlaceHolder1$hdMes", "0")
-    mes_consulta = SelectField("ctl00$ContentPlaceHolder1$Fecha1$ddMes", "0")
+    hdMes = HiddenField("ctl00$ContentPlaceHolder1$hdMes")
+    mes_consulta = SelectField("ctl00$ContentPlaceHolder1$Fecha1$ddMes")
 
 
 class BaseDomesticScraper(AbstractStatefulScraper):

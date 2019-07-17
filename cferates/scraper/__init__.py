@@ -9,6 +9,14 @@ from cferates.scraper.domestic  import (
     DomesticScraper_Rate_1F,
     DomesticScraper_Rate_DAC
 )
+from cferates.scraper.industrial import (
+    IndustrialScraper_Rate_GDMTO,
+    IndustrialScraper_Rate_RAMT,
+    IndustrialScraper_Rate_APMT,
+    IndustrialScraper_Rate_GDMTH,
+    IndustrialScraper_Rate_DIST,
+    IndustrialScraper_Rate_DIT
+)
 
 
 SCRAPER_MAP = {
@@ -20,6 +28,12 @@ SCRAPER_MAP = {
     Rate.ONE_E: DomesticScraper_Rate_1E,
     Rate.ONE_F: DomesticScraper_Rate_1F,
     Rate.DAC: DomesticScraper_Rate_DAC,
+    Rate.GDMTO: IndustrialScraper_Rate_GDMTO,
+    Rate.RAMT: IndustrialScraper_Rate_RAMT,
+    Rate.APMT: IndustrialScraper_Rate_APMT,
+    Rate.GDMTH: IndustrialScraper_Rate_GDMTH,
+    Rate.DIST: IndustrialScraper_Rate_DIST,
+    Rate.DIT: IndustrialScraper_Rate_DIT
 }
 
 
