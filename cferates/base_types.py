@@ -22,8 +22,10 @@ class Rate(enum.Enum):
     APMT = enum.auto()
     RABT = enum.auto()
     RAMT = enum.auto()
-    # special with gov subsidy
-    NINE_CU = enum.auto()
-    NINE_N = enum.auto()
-    # we're only missing EA
-    # from which there is nothing to scrape
+    ###################################
+    # we're missing EA, 9CU, 9N
+    # EA has  nothing to scrape
+    # and 9X is very simple and
+    # most likely irrelevant
+    # (it only chages every year)
+    ##################################
