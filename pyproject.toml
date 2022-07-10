@@ -3,6 +3,7 @@ name = "cferates"
 version = "0.1.0"
 description = ""
 authors = ["Joel Rivera <rivera@joel.mx>"]
+license = "MIT"
 
 [tool.poetry.dependencies]
 python = "^3.10"
