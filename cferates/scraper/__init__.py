@@ -38,7 +38,8 @@ SCRAPER_MAP = {
 
 
 
-def get_rates_for(rate: Rate, year: int, month: int, summer_month:int=None):
+def get_rates_for(rate: Rate, year: int, month: int, summer_month: int = None,
+                  state: int = None, municipality: int = None, division: int = None):
     """
     Helper function to request the rates without reusing any "requests" session.
 
@@ -48,7 +49,12 @@ def get_rates_for(rate: Rate, year: int, month: int, summer_month:int=None):
     scraper = SCRAPER_MAP[rate]
     if rate in (Rate.ONE, Rate.DAC):
         return scraper().request(year, month)
-    else:
+    elif rate in (Rate.ONE_A, Rate.ONE_B, Rate.ONE_C, Rate.ONE_D, Rate.ONE_E, Rate.ONE_F):
         if summer_month is None:
-            raise TypeError("The argument `summer_month` is required for rates 1B and up")
+            raise TypeError("The argument `summer_month` is required for rates 1A - 1F")
         return scraper().request(year, month, summer_month)
+    else:
+        # Industrial rates
+        if any(arg is None for arg in (state, municipality, division)):
+            raise TypeError("The arguments `state`, `municipality` and `division` are required for industrial rates")
+        return scraper().request(year, month, state, municipality, division)

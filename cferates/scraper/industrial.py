@@ -1,3 +1,4 @@
+import os
 import time
 import random
 import datetime
@@ -40,6 +41,8 @@ class BaseIndustrialScraper(AbstractStatefulScraper):
 
     @staticmethod
     def delay():
+        if os.environ.get("CFERATES_NO_DELAY"):
+            return
         # sleep between 0.1 < 0.2 seconds
         time.sleep(random.randrange(10, 20) / 100.)
 
