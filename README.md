@@ -8,11 +8,11 @@ A Python library and CLI tool to scrape energy prices from the Mexico CFE (Comis
 Installation
 ============
 
-You can install the package using poetry:
+You can install the package using uv:
 
 .. code-block:: bash
 
-    poetry install
+    uv sync
 
 Usage
 =====
@@ -30,10 +30,10 @@ For domestic rates (1, 1A-1F, DAC):
 .. code-block:: bash
 
     # Rate 1
-    poetry run cferates 1
+    uv run cferates 1
 
     # Rate 1A with summer starting in February
-    poetry run cferates 1A --summer-month 2
+    uv run cferates 1A --summer-month 2
 
 Industrial Rates
 ~~~~~~~~~~~~~~~~
@@ -42,7 +42,7 @@ For industrial rates (GDMTO, GDMTH, etc.), you must provide the State, Municipal
 
 .. code-block:: bash
 
-    poetry run cferates GDMTO --state <ID> --municipality <ID> --division <ID>
+    uv run cferates GDMTO --state <ID> --municipality <ID> --division <ID>
 
 Options
 ~~~~~~~
@@ -80,7 +80,7 @@ Running Tests
 
 .. code-block:: bash
 
-    poetry run pytest
+    uv run pytest
 
 Environment Variables
 ---------------------
