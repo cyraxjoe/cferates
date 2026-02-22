@@ -1,8 +1,9 @@
 [tool.poetry]
 name = "cferates"
 version = "0.1.0"
-description = ""
+description = "A Python library and CLI tool to scrape energy prices from the Mexico CFE (Comisión Federal de Electricidad) website."
 authors = ["Joel Rivera <rivera@joel.mx>"]
+readme = "README.md"
 license = "MIT"
 
 [tool.poetry.dependencies]
