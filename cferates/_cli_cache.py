@@ -23,8 +23,10 @@ class Cache:
             return True
 
     def __getitem__(self, item):
-        year, month, summer_month, rate = map(str, item)
-        return self.content[year][month][summer_month][rate]
+        content_level = self.content
+        for part in map(str, item):
+            content_level = content_level[part]
+        return content_level
 
     def __setitem__(self, key_tuple, value):
         content_level = self.content
@@ -36,12 +38,14 @@ class Cache:
             content_level = content_level[part]
         keys = map(str, tuple(value.keys()))
         values = map(str, value.values())
-        content_level[key_tuple[-1]] = dict(zip(keys, values))
+        content_level[str(key_tuple[-1])] = dict(zip(keys, values))
         self.save()
 
     def __delitem__(self, key):
-        year, month, summer_month, rate = map(str, key)
-        del self.content[year][month][summer_month][rate]
+        content_level = self.content
+        for part in map(str, key[:-1]):
+            content_level = content_level[part]
+        del content_level[str(key[-1])]
         self.save()
 
     def save(self):
