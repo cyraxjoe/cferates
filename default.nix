@@ -52,7 +52,7 @@ let
   # Compose the final python set with build systems and the lockfile overlay
   pythonSet = pythonBase.overrideScope (
     lib.composeManyExtensions [
-      pyproject-build-systems.overlays
+      pyproject-build-systems.default
       overlay
     ]
   );
