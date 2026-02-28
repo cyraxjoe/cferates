@@ -14,6 +14,12 @@ You can install the package using uv:
 
     uv sync
 
+Alternatively, if you are using Nix, you can drop into a development shell with all dependencies installed:
+
+.. code-block:: bash
+
+    nix-shell
+
 Usage
 =====
 
@@ -109,6 +115,12 @@ Puedes instalar el paquete utilizando uv:
 .. code-block:: bash
 
     uv sync
+
+Alternativamente, si usas Nix, puedes entrar a un shell de desarrollo con todas las dependencias instaladas:
+
+.. code-block:: bash
+
+    nix-shell
 
 Uso
 ---
