@@ -36,7 +36,11 @@ For domestic rates (1, 1A-1F, DAC):
     uv run cferates 1A --summer-month 2
 
 **Note on `--summer-month`:**
-The CFE determines the start of the summer subsidy based on historical temperature data for each specific locality. There is no official, up-to-date API mapping every Mexican municipality to its specific summer start month. Therefore, you must manually provide the month (between `2` for February and `5` for May) when the summer rate begins in your area. This information is typically published in the *Diario Oficial de la Federación (DOF)* or announced by state governments.
+The CFE determines the start of the summer subsidy based on historical temperature data for each specific locality. According to the *Ley de la Industria Eléctrica* (Electric Industry Law), the supplier (CFE) fixes the "six consecutive warmest months" based on thermometric observations provided by SEMARNAT (Ministry of Environment and Natural Resources).
+
+Because this is an administrative determination published annually via tariff agreements in the *Diario Oficial de la Federación (DOF)*—and occasionally modified by state agreements—there is no official, up-to-date API or static legal table mapping every Mexican municipality to its specific summer start month.
+
+Therefore, you must manually provide the month (between `2` for February and `5` for May) when the summer rate begins in your area.
 
 For example, summer usually starts in **May (5)** for Monterrey, and recently starts in **April (4)** for Hermosillo and all of Sonora due to a state-wide agreement.
 
@@ -128,7 +132,11 @@ Para tarifas domésticas (1, 1A-1F, DAC):
     uv run cferates 1A --summer-month 2
 
 **Nota sobre `--summer-month` (mes de verano):**
-La CFE determina el inicio del subsidio de verano basándose en los datos históricos de temperatura de cada localidad específica. No existe una API oficial ni actualizada que asigne a cada municipio mexicano su mes de inicio de verano. Por lo tanto, debes proveer manualmente el mes (entre `2` para febrero y `5` para mayo) en que comienza la tarifa de verano en tu área. Esta información suele publicarse en el *Diario Oficial de la Federación (DOF)* o ser anunciada por los gobiernos estatales.
+La CFE determina el inicio del subsidio de verano basándose en los datos históricos de temperatura de cada localidad específica. Según la *Ley de la Industria Eléctrica*, el Suministrador (CFE) fija cuáles son los "seis meses consecutivos más cálidos del año" tomando como base las observaciones termométricas expedidas por la SEMARNAT (Secretaría de Medio Ambiente y Recursos Naturales).
+
+Dado que esto es una determinación administrativa publicada año con año mediante Acuerdos Tarifarios en el *Diario Oficial de la Federación (DOF)* —y que en ocasiones es modificada mediante convenios estatales—, no existe una API centralizada, oficial y actualizada, ni una tabla estática en la ley que mapee cada municipio a su mes de inicio de verano.
+
+Por lo tanto, debes proveer manualmente el mes (entre `2` para febrero y `5` para mayo) en que comienza la tarifa de verano en tu área.
 
 Por ejemplo, el verano suele iniciar en **Mayo (5)** para Monterrey, y recientemente inicia en **Abril (4)** para Hermosillo y todo Sonora gracias a un convenio estatal.
 
