@@ -99,7 +99,7 @@ Environment Variables
 Español
 =======
 
-Una librería de Python y herramienta de línea de comandos (CLI) para raspar (scrape) los precios de la energía de la página web de la Comisión Federal de Electricidad (CFE) de México.
+Una librería de Python y herramienta de línea de comandos (CLI) para obtener los precios de la energía de la página web de la Comisión Federal de Electricidad (CFE) de México.
 
 Instalación
 -----------
