@@ -2,8 +2,9 @@ import datetime
 import json
 import sys
 
+import requests
+
 try:
-    import requests
     from mcp.server.fastmcp import FastMCP
 except ImportError:
     _HAS_MCP = False

@@ -1,6 +1,5 @@
 import datetime
 import json
-import sys
 from unittest.mock import patch
 
 import pytest
@@ -9,7 +8,7 @@ pytest.importorskip("mcp", reason="MCP extra not installed")
 import requests  # noqa: E402
 
 from cferates.mcp_server import (  # noqa: E402
-    list_rates, get_rates, _rate_mapping, _validate_parameters, _HAS_MCP,
+    list_rates, get_rates, _rate_mapping, _validate_parameters,
 )
 
 
