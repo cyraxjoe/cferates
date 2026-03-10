@@ -2,8 +2,6 @@ import os
 import datetime
 import pathlib
 import json
-from pprint import pprint
-
 import click
 
 from cferates import Rate, get_rates_for
@@ -39,8 +37,8 @@ def _verify_parameters(year: int, month: int, summer_month: int, rate: str,
     # Check for industrial rates requirements
     domestic_rates = (Rate.ONE, Rate.DAC, Rate.ONE_A, Rate.ONE_B, Rate.ONE_C, Rate.ONE_D, Rate.ONE_E, Rate.ONE_F)
     if rate_enum not in domestic_rates:
-        if not all((state, municipality, division)):
-             raise click.UsageError("Options --state, --municipality and --division are required for industrial rates.")
+        if any(arg is None for arg in (state, municipality, division)):
+            raise click.UsageError("Options --state, --municipality and --division are required for industrial rates.")
     today =  datetime.date.today()
     if year < 2018 or year > today.year:
         raise click.BadOptionUsage(
@@ -68,7 +66,6 @@ def get_rates(year, month, summer_month, no_cache, rate, state, municipality, di
     else:
         app_dir = _ensure_app_dir()
         cache = Cache(app_dir)
-        # TODO: Include state/mun/div in cache key
         transaction_key = (year, month, summer_month, rate, state, municipality, division)
         if transaction_key in cache:
             rates = cache[transaction_key]

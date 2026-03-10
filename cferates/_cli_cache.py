@@ -16,11 +16,10 @@ class Cache:
 
     def __contains__(self, item):
         try:
-            return self[item]
+            self[item]
         except KeyError:
             return False
-        else:
-            return True
+        return True
 
     def __getitem__(self, item):
         content_level = self.content
