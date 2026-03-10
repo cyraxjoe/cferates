@@ -1,10 +1,16 @@
 import datetime
 import json
+import sys
 from unittest.mock import patch
 
-import requests
+import pytest
 
-from cferates.mcp_server import list_rates, get_rates, _rate_mapping, _validate_parameters
+pytest.importorskip("mcp", reason="MCP extra not installed")
+import requests  # noqa: E402
+
+from cferates.mcp_server import (  # noqa: E402
+    list_rates, get_rates, _rate_mapping, _validate_parameters, _HAS_MCP,
+)
 
 
 class TestListRates:
@@ -201,3 +207,21 @@ class TestValidateParameters:
         error = _validate_parameters("GDMTO", 2023, 6, None, state=1)
         assert error is not None
         assert "state, municipality, and division" in error
+
+
+class TestMain:
+    def test_missing_mcp_dependency_exits_with_error(self):
+        with patch("cferates.mcp_server._HAS_MCP", False):
+            from cferates.mcp_server import main
+            with pytest.raises(SystemExit) as exc_info:
+                main()
+            assert exc_info.value.code == 1
+
+    def test_missing_mcp_dependency_prints_install_instructions(self, capsys):
+        with patch("cferates.mcp_server._HAS_MCP", False):
+            from cferates.mcp_server import main
+            with pytest.raises(SystemExit):
+                main()
+            stderr = capsys.readouterr().err
+            assert "pip install cferates[mcp]" in stderr
+            assert "uv sync --extra mcp" in stderr

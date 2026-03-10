@@ -1,18 +1,19 @@
 import datetime
 import json
+import sys
 
-import requests
-from mcp.server.fastmcp import FastMCP
+try:
+    import requests
+    from mcp.server.fastmcp import FastMCP
+except ImportError:
+    _HAS_MCP = False
+else:
+    _HAS_MCP = True
 
-from cferates import Rate, get_rates_for, RATE_NAME_MAP, DOMESTIC_RATE_NAMES, SUMMER_RATE_NAMES
+from cferates import get_rates_for, RATE_NAME_MAP, DOMESTIC_RATE_NAMES, SUMMER_RATE_NAMES
 
 
 _rate_mapping = RATE_NAME_MAP
-
-mcp = FastMCP(
-    "cferates",
-    instructions="Query electricity rates from Mexico's CFE (Comisión Federal de Electricidad)",
-)
 
 
 def _validate_parameters(
@@ -45,7 +46,6 @@ def _validate_parameters(
     return None
 
 
-@mcp.tool()
 def list_rates() -> str:
     """List all available CFE rate types.
 
@@ -69,7 +69,6 @@ def list_rates() -> str:
     }, indent=2)
 
 
-@mcp.tool()
 def get_rates(
     rate: str,
     year: int | None = None,
@@ -134,8 +133,30 @@ def get_rates(
     return json.dumps(result)
 
 
+def _build_mcp_server():
+    """Build and return the MCP server with tools registered."""
+    server = FastMCP(
+        "cferates",
+        instructions="Query electricity rates from Mexico's CFE (Comisión Federal de Electricidad)",
+    )
+    server.tool()(list_rates)
+    server.tool()(get_rates)
+    return server
+
+
 def main():
-    mcp.run()
+    if not _HAS_MCP:
+        print(
+            "Error: The MCP server requires the 'mcp' extra dependencies.\n"
+            "Install them with:\n\n"
+            "    pip install cferates[mcp]\n\n"
+            "Or if using uv:\n\n"
+            "    uv sync --extra mcp",
+            file=sys.stderr,
+        )
+        sys.exit(1)
+    server = _build_mcp_server()
+    server.run()
 
 
 if __name__ == "__main__":
