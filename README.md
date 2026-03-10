@@ -87,6 +87,64 @@ You can also use the library in your Python code:
     rates = get_rates_for(Rate.GDMTO, 2023, 1, state=1, municipality=2, division=3)
     print(rates)
 
+Servidor MCP
+~~~~~~~~~~~~
+
+El paquete incluye un servidor MCP (Model Context Protocol) que expone las consultas de tarifas de la CFE como herramientas para asistentes de IA como Claude. Instala con el extra ``mcp``:
+
+.. code-block:: bash
+
+    uv sync --extra mcp
+    # o
+    pip install cferates[mcp]
+
+El servidor provee dos herramientas:
+
+- **list_rates**: Lista todos los tipos de tarifas disponibles agrupadas por categoría.
+- **get_rates**: Consulta las tarifas para un tipo, año, mes y ubicación dados.
+
+Para usarlo con Claude Code, agrega lo siguiente a tu configuración de MCP:
+
+.. code-block:: json
+
+    {
+      "mcpServers": {
+        "cferates": {
+          "command": "uv",
+          "args": ["--directory", "/ruta/a/cferates", "run", "cferates-mcp"]
+        }
+      }
+    }
+
+MCP Server
+----------
+
+The package includes an MCP (Model Context Protocol) server that exposes CFE rate queries as tools for AI assistants like Claude. Install with the ``mcp`` extra:
+
+.. code-block:: bash
+
+    uv sync --extra mcp
+    # or
+    pip install cferates[mcp]
+
+The server provides two tools:
+
+- **list_rates**: Lists all available CFE rate types grouped by category.
+- **get_rates**: Queries rates for a given type, year, month, and location.
+
+To use it with Claude Code, add the following to your MCP configuration:
+
+.. code-block:: json
+
+    {
+      "mcpServers": {
+        "cferates": {
+          "command": "uv",
+          "args": ["--directory", "/path/to/cferates", "run", "cferates-mcp"]
+        }
+      }
+    }
+
 Development
 ===========
 
