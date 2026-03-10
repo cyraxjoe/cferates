@@ -4,26 +4,11 @@ import pathlib
 import json
 import click
 
-from cferates import Rate, get_rates_for
+from cferates import Rate, get_rates_for, RATE_NAME_MAP
 from cferates._cli_cache import Cache
 
 
-_rate_mapping = {
-    '1': Rate.ONE,
-    '1A': Rate.ONE_A,
-    '1B': Rate.ONE_B,
-    '1C': Rate.ONE_C,
-    '1D': Rate.ONE_D,
-    '1E': Rate.ONE_E,
-    '1F': Rate.ONE_F,
-    'DAC': Rate.DAC,
-    'GDMTO': Rate.GDMTO,
-    'RAMT': Rate.RAMT,
-    'APMT': Rate.APMT,
-    'GDMTH': Rate.GDMTH,
-    'DIST': Rate.DIST,
-    'DIT': Rate.DIT,
-}
+_rate_mapping = RATE_NAME_MAP
 
 def _verify_parameters(year: int, month: int, summer_month: int, rate: str,
                        state: int, municipality: int, division: int) -> None:

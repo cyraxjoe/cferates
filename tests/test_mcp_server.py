@@ -2,7 +2,7 @@ import datetime
 import json
 from unittest.mock import patch
 
-import pytest
+import requests
 
 from cferates.mcp_server import list_rates, get_rates, _rate_mapping, _validate_parameters
 
@@ -113,13 +113,6 @@ class TestGetRatesSuccess:
         assert result == {"Basico": "1.23"}
 
     @patch("cferates.mcp_server.get_rates_for")
-    def test_scraper_exception_returns_error(self, mock_get_rates_for):
-        mock_get_rates_for.side_effect = RuntimeError("connection failed")
-        result = json.loads(get_rates("1", year=2023, month=1))
-        assert "error" in result
-        assert "connection failed" in result["error"]
-
-    @patch("cferates.mcp_server.get_rates_for")
     def test_defaults_to_current_year_and_month(self, mock_get_rates_for):
         mock_get_rates_for.return_value = {}
         fake_today = datetime.date(2023, 6, 15)
@@ -129,6 +122,31 @@ class TestGetRatesSuccess:
             call_args = mock_get_rates_for.call_args
             assert call_args[0][1] == 2023  # year
             assert call_args[0][2] == 6     # month
+
+
+class TestGetRatesExceptionHandling:
+    @patch("cferates.mcp_server.get_rates_for")
+    def test_type_error_returns_invalid_parameters(self, mock_get_rates_for):
+        mock_get_rates_for.side_effect = TypeError("missing argument")
+        result = json.loads(get_rates("1", year=2023, month=1))
+        assert "error" in result
+        assert "Invalid parameters" in result["error"]
+
+    @patch("cferates.mcp_server.get_rates_for")
+    def test_request_exception_returns_generic_network_error(self, mock_get_rates_for):
+        mock_get_rates_for.side_effect = requests.ConnectionError("connection refused")
+        result = json.loads(get_rates("1", year=2023, month=1))
+        assert "error" in result
+        assert "Failed to fetch rates from CFE website" in result["error"]
+        assert "connection refused" not in result["error"]
+
+    @patch("cferates.mcp_server.get_rates_for")
+    def test_generic_exception_does_not_leak_details(self, mock_get_rates_for):
+        mock_get_rates_for.side_effect = RuntimeError("internal stack trace info")
+        result = json.loads(get_rates("1", year=2023, month=1))
+        assert "error" in result
+        assert "Failed to retrieve rates" in result["error"]
+        assert "internal stack trace info" not in result["error"]
 
 
 class TestRateMapping:
@@ -145,6 +163,10 @@ class TestRateMapping:
         for name in ("PDBT", "GDBT", "APBT", "RABT"):
             assert name not in _rate_mapping
 
+    def test_mapping_is_shared_with_cli(self):
+        from cferates.cli import _rate_mapping as cli_mapping
+        assert _rate_mapping is cli_mapping
+
 
 class TestValidateParameters:
     def test_valid_domestic(self):
@@ -152,6 +174,9 @@ class TestValidateParameters:
 
     def test_valid_summer(self):
         assert _validate_parameters("1A", 2023, 6, 3) is None
+
+    def test_valid_industrial(self):
+        assert _validate_parameters("GDMTO", 2023, 6, None, state=1, municipality=2, division=3) is None
 
     def test_year_too_low(self):
         assert _validate_parameters("1", 2017, 1, None) is not None
@@ -161,3 +186,18 @@ class TestValidateParameters:
 
     def test_month_thirteen(self):
         assert _validate_parameters("1", 2023, 13, None) is not None
+
+    def test_summer_month_required_for_summer_rates(self):
+        error = _validate_parameters("1B", 2023, 6, None)
+        assert error is not None
+        assert "summer_month" in error
+
+    def test_summer_month_range_validation(self):
+        error = _validate_parameters("1C", 2023, 6, 7)
+        assert error is not None
+        assert "Invalid summer_month" in error
+
+    def test_industrial_requires_location(self):
+        error = _validate_parameters("GDMTO", 2023, 6, None, state=1)
+        assert error is not None
+        assert "state, municipality, and division" in error

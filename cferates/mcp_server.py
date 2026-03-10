@@ -1,30 +1,13 @@
 import datetime
 import json
 
+import requests
 from mcp.server.fastmcp import FastMCP
 
-from cferates import Rate, get_rates_for
+from cferates import Rate, get_rates_for, RATE_NAME_MAP, DOMESTIC_RATE_NAMES, SUMMER_RATE_NAMES
 
 
-_rate_mapping = {
-    '1': Rate.ONE,
-    '1A': Rate.ONE_A,
-    '1B': Rate.ONE_B,
-    '1C': Rate.ONE_C,
-    '1D': Rate.ONE_D,
-    '1E': Rate.ONE_E,
-    '1F': Rate.ONE_F,
-    'DAC': Rate.DAC,
-    'GDMTO': Rate.GDMTO,
-    'GDMTH': Rate.GDMTH,
-    'DIST': Rate.DIST,
-    'DIT': Rate.DIT,
-    'APMT': Rate.APMT,
-    'RAMT': Rate.RAMT,
-}
-
-_DOMESTIC_RATES = {'1', '1A', '1B', '1C', '1D', '1E', '1F', 'DAC'}
-_SUMMER_RATES = {'1A', '1B', '1C', '1D', '1E', '1F'}
+_rate_mapping = RATE_NAME_MAP
 
 mcp = FastMCP(
     "cferates",
@@ -37,6 +20,9 @@ def _validate_parameters(
     year: int,
     month: int,
     summer_month: int | None,
+    state: int | None = None,
+    municipality: int | None = None,
+    division: int | None = None,
 ) -> str | None:
     """Validate input parameters, returning an error message or None if valid."""
     today = datetime.date.today()
@@ -46,11 +32,16 @@ def _validate_parameters(
         return f"Invalid month: {month}. Must be between 1 and 12."
     if year == today.year and month > today.month + 1:
         return f"Invalid month: {month} is too far in the future (1 month tolerance)."
-    if rate_upper in _SUMMER_RATES and summer_month is not None:
-        if summer_month < 2 or summer_month > 5:
-            return f"Invalid summer_month: {summer_month}. Must be between 2 and 5."
     if rate_upper in ('1', 'DAC') and summer_month is not None:
         return f"summer_month is not relevant for rate {rate_upper}."
+    if rate_upper in SUMMER_RATE_NAMES:
+        if summer_month is None:
+            return f"summer_month (2-5) is required for rate {rate_upper}."
+        if summer_month < 2 or summer_month > 5:
+            return f"Invalid summer_month: {summer_month}. Must be between 2 and 5."
+    if rate_upper not in DOMESTIC_RATE_NAMES:
+        if any(arg is None for arg in (state, municipality, division)):
+            return f"state, municipality, and division are required for rate {rate_upper}."
     return None
 
 
@@ -117,18 +108,10 @@ def get_rates(
             "error": f"Unknown rate '{rate}'. Valid rates: {', '.join(sorted(_rate_mapping.keys()))}"
         })
 
-    if rate_upper in _SUMMER_RATES and summer_month is None:
-        return json.dumps({
-            "error": f"summer_month (2-5) is required for rate {rate_upper}"
-        })
-
-    if rate_upper not in _DOMESTIC_RATES:
-        if any(arg is None for arg in (state, municipality, division)):
-            return json.dumps({
-                "error": f"state, municipality, and division are required for rate {rate_upper}"
-            })
-
-    validation_error = _validate_parameters(rate_upper, year, month, summer_month)
+    validation_error = _validate_parameters(
+        rate_upper, year, month, summer_month,
+        state=state, municipality=municipality, division=division,
+    )
     if validation_error:
         return json.dumps({"error": validation_error})
 
@@ -141,8 +124,12 @@ def get_rates(
             municipality=municipality,
             division=division,
         )
-    except Exception as e:
-        return json.dumps({"error": str(e)})
+    except TypeError as e:
+        return json.dumps({"error": f"Invalid parameters: {e}"})
+    except requests.RequestException:
+        return json.dumps({"error": "Failed to fetch rates from CFE website. Please try again later."})
+    except Exception:
+        return json.dumps({"error": f"Failed to retrieve rates for {rate_upper}."})
 
     return json.dumps(result)
 
