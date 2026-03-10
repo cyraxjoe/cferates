@@ -15,15 +15,11 @@ _rate_mapping = {
     '1E': Rate.ONE_E,
     '1F': Rate.ONE_F,
     'DAC': Rate.DAC,
-    'PDBT': Rate.PDBT,
-    'GDBT': Rate.GDBT,
     'GDMTO': Rate.GDMTO,
     'GDMTH': Rate.GDMTH,
     'DIST': Rate.DIST,
     'DIT': Rate.DIT,
-    'APBT': Rate.APBT,
     'APMT': Rate.APMT,
-    'RABT': Rate.RABT,
     'RAMT': Rate.RAMT,
 }
 
@@ -36,28 +32,48 @@ mcp = FastMCP(
 )
 
 
+def _validate_parameters(
+    rate_upper: str,
+    year: int,
+    month: int,
+    summer_month: int | None,
+) -> str | None:
+    """Validate input parameters, returning an error message or None if valid."""
+    today = datetime.date.today()
+    if year < 2018 or year > today.year:
+        return f"Invalid year: {year}. Must be between 2018 and {today.year}."
+    if month < 1 or month > 12:
+        return f"Invalid month: {month}. Must be between 1 and 12."
+    if year == today.year and month > today.month + 1:
+        return f"Invalid month: {month} is too far in the future (1 month tolerance)."
+    if rate_upper in _SUMMER_RATES and summer_month is not None:
+        if summer_month < 2 or summer_month > 5:
+            return f"Invalid summer_month: {summer_month}. Must be between 2 and 5."
+    if rate_upper in ('1', 'DAC') and summer_month is not None:
+        return f"summer_month is not relevant for rate {rate_upper}."
+    return None
+
+
 @mcp.tool()
 def list_rates() -> str:
     """List all available CFE rate types.
 
     Returns the available rate identifiers grouped by category:
     - Domestic rates: 1, 1A-1F, DAC
-    - Industrial/general rates: PDBT, GDBT, GDMTO, GDMTH, DIST, DIT
-    - Special rates: APBT, APMT, RABT, RAMT
+    - Industrial rates: GDMTO, GDMTH, DIST, DIT, APMT, RAMT
 
     Domestic rates 1A-1F require a summer_month parameter.
-    Industrial/general and special rates require state, municipality, and division parameters.
+    Industrial rates require state, municipality, and division parameters.
     """
     return json.dumps({
         "domestic": {
             "simple": ["1", "DAC"],
             "with_summer": ["1A", "1B", "1C", "1D", "1E", "1F"],
         },
-        "industrial": ["PDBT", "GDBT", "GDMTO", "GDMTH", "DIST", "DIT"],
-        "special": ["APBT", "APMT", "RABT", "RAMT"],
+        "industrial": ["GDMTO", "GDMTH", "DIST", "DIT", "APMT", "RAMT"],
         "notes": {
             "summer_month": "Required for rates 1A-1F. The month (2-5) when summer starts in the locality.",
-            "state_municipality_division": "Required for industrial and special rates. IDs correspond to CFE website form values.",
+            "state_municipality_division": "Required for industrial rates. IDs correspond to CFE website form values.",
         },
     }, indent=2)
 
@@ -77,14 +93,13 @@ def get_rates(
     Args:
         rate: The rate type to query. Use list_rates() to see available options.
               Domestic: 1, 1A, 1B, 1C, 1D, 1E, 1F, DAC.
-              Industrial: PDBT, GDBT, GDMTO, GDMTH, DIST, DIT.
-              Special: APBT, APMT, RABT, RAMT.
+              Industrial: GDMTO, GDMTH, DIST, DIT, APMT, RAMT.
         year: Year to query (default: current year). Must be >= 2018.
         month: Month to query, 1-12 (default: current month).
         summer_month: Month when summer starts (2-5). Required for rates 1A-1F.
-        state: State ID (1-32). Required for industrial/special rates.
-        municipality: Municipality ID. Required for industrial/special rates.
-        division: Division ID. Required for industrial/special rates.
+        state: State ID (1-32). Required for industrial rates.
+        municipality: Municipality ID. Required for industrial rates.
+        division: Division ID. Required for industrial rates.
 
     Returns:
         JSON string with rate components (e.g. Basico, Intermedio, Excedente for
@@ -112,6 +127,10 @@ def get_rates(
             return json.dumps({
                 "error": f"state, municipality, and division are required for rate {rate_upper}"
             })
+
+    validation_error = _validate_parameters(rate_upper, year, month, summer_month)
+    if validation_error:
+        return json.dumps({"error": validation_error})
 
     rate_enum = _rate_mapping[rate_upper]
     try:

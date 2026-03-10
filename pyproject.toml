@@ -20,6 +20,7 @@ mcp = ["mcp[cli]>=1.0.0"]
 
 [project.scripts]
 cferates = "cferates.cli:main"
+cferates-mcp = "cferates.mcp_server:main"
 
 [project.entry-points.mcp]
 cferates-mcp = "cferates.mcp_server:main"
