@@ -1,7 +1,7 @@
 import datetime
 import pytest
 import click
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 
 from cferates.cli import _verify_parameters, get_rates, _rate_mapping
 
@@ -50,12 +50,29 @@ class TestVerifyParameters:
             _verify_parameters(future_year, 1, None, "1", None, None, None)
 
     def test_month_too_far_in_future(self):
-        today = datetime.date.today()
-        # A month that is more than 1 ahead of the current month
-        far_month = today.month + 2
-        if far_month <= 12:
+        """Use a fixed past date to ensure the test always exercises the check."""
+        # 2023-06-15: month 8 is 2 ahead of June, should be rejected
+        fake_today = datetime.date(2023, 6, 15)
+        with patch("cferates.cli.datetime") as mock_dt:
+            mock_dt.date.today.return_value = fake_today
             with pytest.raises(click.BadOptionUsage, match="Invalid month"):
-                _verify_parameters(today.year, far_month, None, "1", None, None, None)
+                _verify_parameters(2023, 8, None, "1", None, None, None)
+
+
+class _StubCache:
+    """Simple stub replacing Cache to avoid MagicMock dunder-method issues."""
+
+    def __init__(self, data=None):
+        self._data = data or {}
+
+    def __contains__(self, key):
+        return key in self._data
+
+    def __getitem__(self, key):
+        return self._data[key]
+
+    def __setitem__(self, key, value):
+        self._data[key] = value
 
 
 class TestGetRates:
@@ -73,10 +90,7 @@ class TestGetRates:
     @patch("cferates.cli.get_rates_for")
     def test_cache_miss_fetches_and_stores(self, mock_get_rates, mock_app_dir, mock_cache_cls):
         mock_app_dir.return_value = "/fake"
-        cache_instance = MagicMock()
-        cache_instance.__contains__ = MagicMock(return_value=False)
-        cache_instance.__getitem__ = MagicMock(return_value={"Basico": "1.23"})
-        mock_cache_cls.return_value = cache_instance
+        mock_cache_cls.return_value = _StubCache()
         mock_get_rates.return_value = {"Basico": "1.23"}
 
         result = get_rates(2023, 1, None, False, "1", None, None, None)
@@ -88,10 +102,8 @@ class TestGetRates:
     @patch("cferates.cli.get_rates_for")
     def test_cache_hit_returns_cached(self, mock_get_rates, mock_app_dir, mock_cache_cls):
         mock_app_dir.return_value = "/fake"
-        cache_instance = MagicMock()
-        cache_instance.__contains__ = MagicMock(return_value=True)
-        cache_instance.__getitem__ = MagicMock(return_value={"Basico": "1.23"})
-        mock_cache_cls.return_value = cache_instance
+        key = (2023, 1, None, "1", None, None, None)
+        mock_cache_cls.return_value = _StubCache({key: {"Basico": "1.23"}})
 
         result = get_rates(2023, 1, None, False, "1", None, None, None)
         mock_get_rates.assert_not_called()
