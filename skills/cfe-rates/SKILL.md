@@ -9,24 +9,32 @@ You have access to the `cferates` CLI tool to query electricity rates from Mexic
 
 ## Setup
 
-Before using the CLI, ensure `cferates` is installed. Run this first:
+The preferred way to run `cferates` is with `uvx`, which runs it directly without needing to install first:
 
 ```bash
-# Preferred: using uv
-uv tool install cferates --from git+https://github.com/cyraxjoe/cferates.git
-
-# Alternative: using pipx
-pipx install git+https://github.com/cyraxjoe/cferates.git
-
-# Alternative: using pip
-pip install git+https://github.com/cyraxjoe/cferates.git
+uvx --from git+https://github.com/cyraxjoe/cferates.git cferates RATE [OPTIONS]
 ```
 
-If `cferates` is already installed, the commands above are safe to re-run.
+If you prefer to install it permanently:
+
+```bash
+# Using uv
+uv tool install cferates --from git+https://github.com/cyraxjoe/cferates.git
+
+# Using pipx
+pipx install git+https://github.com/cyraxjoe/cferates.git
+
+# Using pip
+pip install git+https://github.com/cyraxjoe/cferates.git
+```
 
 ## CLI Usage
 
 ```
+# With uvx (no install needed)
+uvx --from git+https://github.com/cyraxjoe/cferates.git cferates RATE [OPTIONS]
+
+# If installed
 cferates RATE [OPTIONS]
 ```
 
