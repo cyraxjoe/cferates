@@ -7,14 +7,9 @@ import requests
 try:
     from mcp.server.fastmcp import FastMCP
 except ImportError:
-    _HAS_MCP = False
-else:
-    _HAS_MCP = True
+    FastMCP = None
 
 from cferates import get_rates_for, RATE_NAME_MAP, DOMESTIC_RATE_NAMES, SUMMER_RATE_NAMES
-
-
-_rate_mapping = RATE_NAME_MAP
 
 
 def _validate_parameters(
@@ -57,12 +52,15 @@ def list_rates() -> str:
     Domestic rates 1A-1F require a summer_month parameter.
     Industrial rates require state, municipality, and division parameters.
     """
+    simple_domestic = sorted(DOMESTIC_RATE_NAMES - SUMMER_RATE_NAMES)
+    summer_domestic = sorted(SUMMER_RATE_NAMES)
+    industrial = sorted(set(RATE_NAME_MAP) - DOMESTIC_RATE_NAMES)
     return json.dumps({
         "domestic": {
-            "simple": ["1", "DAC"],
-            "with_summer": ["1A", "1B", "1C", "1D", "1E", "1F"],
+            "simple": simple_domestic,
+            "with_summer": summer_domestic,
         },
-        "industrial": ["GDMTO", "GDMTH", "DIST", "DIT", "APMT", "RAMT"],
+        "industrial": industrial,
         "notes": {
             "summer_month": "Required for rates 1A-1F. The month (2-5) when summer starts in the locality.",
             "state_municipality_division": "Required for industrial rates. IDs correspond to CFE website form values.",
@@ -103,9 +101,9 @@ def get_rates(
         month = today.month
 
     rate_upper = rate.upper()
-    if rate_upper not in _rate_mapping:
+    if rate_upper not in RATE_NAME_MAP:
         return json.dumps({
-            "error": f"Unknown rate '{rate}'. Valid rates: {', '.join(sorted(_rate_mapping.keys()))}"
+            "error": f"Unknown rate '{rate}'. Valid rates: {', '.join(sorted(RATE_NAME_MAP))}"
         })
 
     validation_error = _validate_parameters(
@@ -115,7 +113,7 @@ def get_rates(
     if validation_error:
         return json.dumps({"error": validation_error})
 
-    rate_enum = _rate_mapping[rate_upper]
+    rate_enum = RATE_NAME_MAP[rate_upper]
     try:
         result = get_rates_for(
             rate_enum, year, month,
@@ -146,7 +144,7 @@ def _build_mcp_server():
 
 
 def main():
-    if not _HAS_MCP:
+    if FastMCP is None:
         print(
             "Error: The MCP server requires the 'mcp' extra dependencies.\n"
             "Install them with:\n\n"

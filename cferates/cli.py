@@ -8,11 +8,9 @@ from cferates import Rate, get_rates_for, RATE_NAME_MAP
 from cferates._cli_cache import Cache
 
 
-_rate_mapping = RATE_NAME_MAP
-
 def _verify_parameters(year: int, month: int, summer_month: int, rate: str,
                        state: int, municipality: int, division: int) -> None:
-    rate_enum = _rate_mapping[rate]
+    rate_enum = RATE_NAME_MAP[rate]
     if rate_enum in (Rate.ONE, Rate.DAC) and summer_month is not None:
         raise click.BadOptionUsage(
             'summer_month',
@@ -47,7 +45,7 @@ def _ensure_app_dir():
 def get_rates(year, month, summer_month, no_cache, rate, state, municipality, division):
     if no_cache:
         rates = get_rates_for(
-            _rate_mapping[rate], year, month, summer_month, state, municipality, division)
+            RATE_NAME_MAP[rate], year, month, summer_month, state, municipality, division)
     else:
         app_dir = _ensure_app_dir()
         cache = Cache(app_dir)
@@ -56,7 +54,7 @@ def get_rates(year, month, summer_month, no_cache, rate, state, municipality, di
             rates = cache[transaction_key]
         else:
             cache[transaction_key] = get_rates_for(
-                _rate_mapping[rate], year, month, summer_month, state, municipality, division)
+                RATE_NAME_MAP[rate], year, month, summer_month, state, municipality, division)
             # retrieve the stringified version of the rates, as it was stored
             rates = cache[transaction_key]
     return rates
@@ -74,7 +72,7 @@ def get_rates(year, month, summer_month, no_cache, rate, state, municipality, di
 @click.option('--division', default=None, type=int, help="Division ID (required for industrial rates)")
 @click.option('--no-cache', default=False, is_flag=True,
               help="Disable cache")
-@click.argument('rate', type=click.Choice(tuple(_rate_mapping.keys())))
+@click.argument('rate', type=click.Choice(tuple(RATE_NAME_MAP.keys())))
 def main(year, month, summer_month, no_cache, rate, state, municipality, division):
     _verify_parameters(year, month, summer_month, rate, state, municipality, division)
     rates = get_rates(year, month, summer_month, no_cache, rate, state, municipality, division)

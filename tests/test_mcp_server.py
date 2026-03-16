@@ -7,8 +7,9 @@ import pytest
 pytest.importorskip("mcp", reason="MCP extra not installed")
 import requests  # noqa: E402
 
+from cferates import RATE_NAME_MAP  # noqa: E402
 from cferates.mcp_server import (  # noqa: E402
-    list_rates, get_rates, _rate_mapping, _validate_parameters,
+    list_rates, get_rates, _validate_parameters,
 )
 
 
@@ -24,7 +25,7 @@ class TestListRates:
         assert result["domestic"]["simple"] == ["1", "DAC"]
         assert result["domestic"]["with_summer"] == ["1A", "1B", "1C", "1D", "1E", "1F"]
 
-    def test_all_listed_rates_are_in_rate_mapping(self):
+    def test_all_listed_rates_are_in_rate_name_map(self):
         result = json.loads(list_rates())
         all_rates = (
             result["domestic"]["simple"]
@@ -32,7 +33,7 @@ class TestListRates:
             + result["industrial"]
         )
         for rate in all_rates:
-            assert rate in _rate_mapping, f"Rate {rate} listed but not in _rate_mapping"
+            assert rate in RATE_NAME_MAP, f"Rate {rate} listed but not in RATE_NAME_MAP"
 
 
 class TestGetRatesValidation:
@@ -157,20 +158,20 @@ class TestGetRatesExceptionHandling:
 class TestRateMapping:
     def test_all_domestic_rates_present(self):
         for name in ("1", "1A", "1B", "1C", "1D", "1E", "1F", "DAC"):
-            assert name in _rate_mapping
+            assert name in RATE_NAME_MAP
 
     def test_all_industrial_rates_present(self):
         for name in ("GDMTO", "RAMT", "APMT", "GDMTH", "DIST", "DIT"):
-            assert name in _rate_mapping
+            assert name in RATE_NAME_MAP
 
     def test_no_unsupported_rates(self):
-        """Rates without scrapers should not be in _rate_mapping."""
+        """Rates without scrapers should not be in RATE_NAME_MAP."""
         for name in ("PDBT", "GDBT", "APBT", "RABT"):
-            assert name not in _rate_mapping
+            assert name not in RATE_NAME_MAP
 
     def test_mapping_is_shared_with_cli(self):
-        from cferates.cli import _rate_mapping as cli_mapping
-        assert _rate_mapping is cli_mapping
+        from cferates.cli import RATE_NAME_MAP as cli_rate_name_map
+        assert RATE_NAME_MAP is cli_rate_name_map
 
 
 class TestValidateParameters:
@@ -210,14 +211,14 @@ class TestValidateParameters:
 
 class TestMain:
     def test_missing_mcp_dependency_exits_with_error(self):
-        with patch("cferates.mcp_server._HAS_MCP", False):
+        with patch("cferates.mcp_server.FastMCP", None):
             from cferates.mcp_server import main
             with pytest.raises(SystemExit) as exc_info:
                 main()
             assert exc_info.value.code == 1
 
     def test_missing_mcp_dependency_prints_install_instructions(self, capsys):
-        with patch("cferates.mcp_server._HAS_MCP", False):
+        with patch("cferates.mcp_server.FastMCP", None):
             from cferates.mcp_server import main
             with pytest.raises(SystemExit):
                 main()
