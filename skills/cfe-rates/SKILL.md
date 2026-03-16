@@ -9,11 +9,11 @@ You have access to the `cferates` CLI tool to query electricity rates from Mexic
 
 ## Setup
 
-First, check if the local marketplace checkout exists at `~/.claude/plugins/marketplaces/cyraxjoe-cferates/`. If it does, use it as the source. If not, fall back to the remote repository.
+First, check if the local marketplace checkout exists at `~/.claude/plugins/marketplaces/cferates/`. If it does, use it as the source. If not, fall back to the remote repository.
 
 ```bash
-if [ -d ~/.claude/plugins/marketplaces/cyraxjoe-cferates ]; then
-    CFERATES_SRC=~/.claude/plugins/marketplaces/cyraxjoe-cferates
+if [ -d ~/.claude/plugins/marketplaces/cferates ]; then
+    CFERATES_SRC=~/.claude/plugins/marketplaces/cferates
 else
     CFERATES_SRC=git+https://github.com/cyraxjoe/cferates.git
 fi
