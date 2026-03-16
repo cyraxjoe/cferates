@@ -87,6 +87,18 @@ You can also use the library in your Python code:
     rates = get_rates_for(Rate.GDMTO, 2023, 1, state=1, municipality=2, division=3)
     print(rates)
 
+Claude Code Skill
+==================
+
+This project is available as a `Claude Code <https://claude.com/claude-code>`_ plugin that provides a skill for looking up CFE electricity rates.
+
+To install:
+
+.. code-block:: bash
+
+    claude plugin marketplace add cyraxjoe/cferates
+    claude plugin install cferates@cferates
+
 Development
 ===========
 
@@ -171,6 +183,18 @@ Opciones
 - `--municipality`: ID de Municipio (requerido para tarifas industriales).
 - `--division`: ID de División (requerido para tarifas industriales).
 - `--no-cache`: Desactivar el almacenamiento en caché de los resultados.
+
+Skill de Claude Code
+^^^^^^^^^^^^^^^^^^^^
+
+Este proyecto está disponible como un plugin de `Claude Code <https://claude.com/claude-code>`_ que provee un skill para consultar las tarifas de la CFE.
+
+Para instalar:
+
+.. code-block:: bash
+
+    claude plugin marketplace add cyraxjoe/cferates
+    claude plugin install cferates@cferates
 
 Uso como Librería
 ~~~~~~~~~~~~~~~~~
