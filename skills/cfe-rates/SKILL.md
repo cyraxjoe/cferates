@@ -7,6 +7,23 @@ description: Look up CFE (Mexico) electricity rates. Use when the user asks abou
 
 You have access to the `cferates` CLI tool to query electricity rates from Mexico's CFE (Comisión Federal de Electricidad).
 
+## Setup
+
+Before using the CLI, ensure `cferates` is installed. Run this first:
+
+```bash
+# Preferred: using uv
+uv tool install cferates --from git+https://github.com/cyraxjoe/cferates.git
+
+# Alternative: using pipx
+pipx install git+https://github.com/cyraxjoe/cferates.git
+
+# Alternative: using pip
+pip install git+https://github.com/cyraxjoe/cferates.git
+```
+
+If `cferates` is already installed, the commands above are safe to re-run.
+
 ## CLI Usage
 
 ```
