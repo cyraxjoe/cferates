@@ -1,0 +1,13 @@
+{
+  "name": "cferates",
+  "description": "Look up CFE (Mexico) electricity rates using the cferates CLI",
+  "version": "0.1.0",
+  "author": {
+    "name": "Joel Rivera",
+    "email": "rivera@joel.mx"
+  },
+  "homepage": "https://github.com/cyraxjoe/cferates",
+  "repository": "https://github.com/cyraxjoe/cferates",
+  "license": "MIT",
+  "keywords": ["cfe", "electricity", "mexico", "rates", "energy"]
+}

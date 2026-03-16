@@ -1,6 +1,6 @@
 ---
+name: cfe-rates
 description: Look up CFE (Mexico) electricity rates. Use when the user asks about electricity rates, tariffs, energy costs, or CFE pricing.
-user_invocable: true
 ---
 
 # CFE Electricity Rate Lookup
