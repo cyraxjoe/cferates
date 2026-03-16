@@ -1,0 +1,19 @@
+{
+  "name": "cferates",
+  "owner": {
+    "name": "Joel Rivera",
+    "email": "rivera@joel.mx"
+  },
+  "metadata": {
+    "description": "CFE (Mexico) electricity rate lookup plugins"
+  },
+  "plugins": [
+    {
+      "name": "cferates",
+      "source": ".",
+      "description": "Look up CFE (Mexico) electricity rates using the cferates CLI",
+      "version": "0.1.0",
+      "license": "MIT"
+    }
+  ]
+}
