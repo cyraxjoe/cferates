@@ -10,7 +10,7 @@
   "plugins": [
     {
       "name": "cferates",
-      "source": ".",
+      "source": "./",
       "description": "Look up CFE (Mexico) electricity rates using the cferates CLI",
       "version": "0.1.0",
       "license": "MIT"
